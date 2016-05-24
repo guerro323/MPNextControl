@@ -1,0 +1,2 @@
+c:\users\guerro\documents\visual studio 2015\Projects\MPNextControl\MPNextControl\bin\Debug\MPNextControl.exe.config
+c:\users\guerro\documents\visual studio 2015\Projects\MPNextControl\MPNextControl\obj\Debug\MPNextControl.csprojResolveAssemblyReference.cache
