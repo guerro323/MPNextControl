@@ -17,7 +17,7 @@ namespace MPNextControl.Services
         /// <param name="extension">The file extension</param>
         static public async void ProcessWrite(string pluginName, string fileName, string text)
         {
-            await WriteTextAsync("Plugins/files/" + pluginName + "/" + fileName, text);
+            await WriteTextAsync("Plugins/" + pluginName + "/" + fileName, text);
         }
 
         /// <summary>
@@ -31,9 +31,10 @@ namespace MPNextControl.Services
             byte[] encodedText = Encoding.Unicode.GetBytes(text);
 
             using (FileStream sourceStream = new FileStream(filePath,
-                FileMode.Append, FileAccess.Write, FileShare.None,
+                FileMode.Create, FileAccess.Write, FileShare.None,
                 bufferSize: 4096, useAsync: true))
             {
+                
                 await sourceStream.WriteAsync(encodedText, 0, encodedText.Length);
             };
         }
@@ -41,7 +42,8 @@ namespace MPNextControl.Services
 
         static public async Task<string> ProcessRead(string pluginName, string fileName)
         {
-            string filePath = "Plugins/files/" + pluginName + "/" + fileName;
+            string filePath = "Plugins/" + pluginName + "/" + fileName;
+            Console.WriteLine(filePath);
             if (File.Exists(filePath))
             {
                 try

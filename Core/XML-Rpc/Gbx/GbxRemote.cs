@@ -43,10 +43,25 @@ namespace MPNextControl.Core.XML_Rpc.Gbx
             tcpSocket = new Socket(IPEndPoint.AddressFamily, SocketType.Stream, ProtocolType.Tcp);
 
             // Connect to the socket...
-            tcpSocket.Connect(IPEndPoint);
+            try
+            {
+                tcpSocket.Connect(IPEndPoint);
+            }
+            catch (Exception)
+            {
+                Console.WriteLine($"Controller couldn't connected to : {Ip}:{Port}\t Leaving in 5 seconds");
+                Console.Beep(301, 200);
+                Console.Beep(601, 200);
+                Thread.Sleep(5000);
+                Environment.Exit(0);
+            }
+
+            Console.Beep(601, 200);
+            Console.Beep(901, 400);
+            Console.Beep();
 
             // First, we need to check if it's connected
-            while(!tcpSocket.Connected)
+            while (!tcpSocket.Connected)
             {
                 if (triesLeft <= 0)
                 {
@@ -124,10 +139,7 @@ namespace MPNextControl.Core.XML_Rpc.Gbx
                 {
 
                     // add the response to the queue ...
-                    lock (this)
-                    {
-                        responses.Add(call.Handle, call);
-                    }
+                    responses.Add(call.Handle, call);
 
                     // callback if any method was set ...
                     if (callbackList [ call.Handle ] != null)
@@ -195,32 +207,29 @@ namespace MPNextControl.Core.XML_Rpc.Gbx
             if (inSocket == null || inCall == null) return 0;
             if (inSocket.Connected)
             {
-                lock (inSocket)
+                try
                 {
-                    try
-                    {
-                        // create request body ...
-                        byte[] body = Encoding.UTF8.GetBytes(inCall.Xml);
+                    // create request body ...
+                    byte[] body = Encoding.UTF8.GetBytes(inCall.Xml);
 
-                        // create response header ...
-                        byte[] bSize = BitConverter.GetBytes(body.Length);
-                        byte[] bHandle = BitConverter.GetBytes(inCall.Handle);
+                    // create response header ...
+                    byte[] bSize = BitConverter.GetBytes(body.Length);
+                    byte[] bHandle = BitConverter.GetBytes(inCall.Handle);
 
-                        // create call data ...
-                        byte[] call = new byte[bSize.Length + bHandle.Length + body.Length];
-                        Array.Copy(bSize, 0, call, 0, bSize.Length);
-                        Array.Copy(bHandle, 0, call, 4, bHandle.Length);
-                        Array.Copy(body, 0, call, 8, body.Length);
+                    // create call data ...
+                    byte[] call = new byte[bSize.Length + bHandle.Length + body.Length];
+                    Array.Copy(bSize, 0, call, 0, bSize.Length);
+                    Array.Copy(bHandle, 0, call, 4, bHandle.Length);
+                    Array.Copy(body, 0, call, 8, body.Length);
 
-                        // send call ...
-                        inSocket.Send(call);
+                    // send call ...
+                    inSocket.Send(call);
 
-                        return inCall.Handle;
-                    }
-                    catch
-                    {
-                        return 0;
-                    }
+                    return inCall.Handle;
+                }
+                catch
+                {
+                    return 0;
                 }
             }
             throw new ServerNotConnectedException();
@@ -262,7 +271,7 @@ namespace MPNextControl.Core.XML_Rpc.Gbx
 
         public async void Request(string methodName, object[] Params)
         {
-            await AsyncRequest(methodName, Params);
+            await AsyncRequest(methodName, Params, false);
         }
 
         /// <summary>
@@ -274,7 +283,7 @@ namespace MPNextControl.Core.XML_Rpc.Gbx
         /// <param name="inMethodName">The method to call.</param>
         /// <param name="inParams">Parameters describing your request.</param>
         /// <returns>Returns a response object from the server.</returns>
-        public async Task<GbxCall> AsyncRequest(string inMethodName, object [ ] inParams)
+        public async Task<GbxCall> AsyncRequest(string inMethodName, object [ ] inParams, bool needResponse)
         {
             // reset event ...
             callRead.Reset();
@@ -287,14 +296,17 @@ namespace MPNextControl.Core.XML_Rpc.Gbx
             int handle = SendCall(this.tcpSocket, Request);
 
             // wait until we received the call ...
-            await Task.Run(() =>
+            if (needResponse)
             {
-                while (responses [ handle ] == null && tcpSocket.Connected && timeOut > Environment.TickCount)
+                await Task.Run(() =>
                 {
-                    callRead.WaitOne();
-                }
-                if (timeOut < Environment.TickCount) tcpSocket.Disconnect(true);
-            }).ContinueWith(t => t);
+                    while (responses [ handle ] == null && tcpSocket.Connected && timeOut > Environment.TickCount)
+                    {
+                        callRead.WaitOne();
+                    }
+                    if (timeOut < Environment.TickCount) tcpSocket.Disconnect(true);
+                }).ContinueWith(t => t);
+            }
 
             // did we get disconnected ?
             if (!tcpSocket.Connected)
@@ -304,7 +316,7 @@ namespace MPNextControl.Core.XML_Rpc.Gbx
                 // AND SEND THIS GLORIOUS XMLRPC CALL MASTER RACE
                 tcpSocket.Close();
                 TryConnect();
-                return await AsyncRequest(inMethodName, inParams);
+                return await AsyncRequest(inMethodName, inParams, needResponse);
             }
 
             // get the call and return it ...
@@ -317,7 +329,7 @@ namespace MPNextControl.Core.XML_Rpc.Gbx
         /// <param name="inMethodName">The method to call.</param>
         /// <param name="inParams">Parameters describing your request.</param>
         /// <returns>Returns a response object from the server.</returns>
-        public async Task<GbxCall> AsyncRequest(string inMethodName, object inParams)
+        public async Task<GbxCall> AsyncRequestSimple(string inMethodName, object inParams)
         {
             // reset event ...
             callRead.Reset();

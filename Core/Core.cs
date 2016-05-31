@@ -10,24 +10,28 @@ using STATIC = MPNextControl.Services.Static;
 
 namespace MPNextControl.Core
 {
+
     public class Core
     {
         public STATIC.Config Config;
-        public MAIN.RPCServer Server;
+        public List<MAIN.RPCServer> Servers;
+        public MAIN.RPCServer MainServer;
+
+        public STATIC.Manialink ManialinkManager;
+        public STATIC.Helper HelperManager;
 
         public STATIC.GameInfo GameInfo;
+
+        public Plugins.PluginConfig PluginConfig;
 
         public Core()
         {
             Config = STATIC.Config.Get().Result;
-            Server = new MAIN.RPCServer(Config.Ip, Config.Port)
-            {
-                SuperAdminPassword = Config.SuperAdminPassword,
-                SuperAdminLogin = Config.SuperAdminLogin
-            };
+            ManialinkManager = new STATIC.Manialink();
+            HelperManager = new STATIC.Helper();
         }
 
-        public virtual async void HandleOnGbxCallback(GbxRemote RemoteServer, GbxRemote.GbxCallbackEventArgs Call)
+        public virtual void HandleOnGbxCallback(GbxRemote RemoteServer, GbxRemote.GbxCallbackEventArgs Call)
         {
 
         }

@@ -4,10 +4,11 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace MPNextControl.Services.Static
+namespace MPNextControl.Core.XMLRPC.Structures
 {
-    public class GameInfo
+    public class Language
     {
-        public string GameName;
+        public string Lang;
+        public string Text;
     }
 }
