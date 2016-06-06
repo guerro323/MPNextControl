@@ -20,10 +20,10 @@ namespace MPNextControl
             AppDomain.CurrentDomain.AssemblyResolve += ResolveEventHandler;
 
             Console.WriteLine("Launching. . .");
-            Console.Beep(120, 100);
+            /*Console.Beep(120, 100);
             Console.Beep(500, 300);
             Console.Beep(1500, 100);
-            Thread.Sleep(900);
+            Thread.Sleep(900);*/
             LOW.Manager core = new LOW.Manager();
             PLUGIN.PluginManager.Load(Services.StaticPower.CurrentCore, "*");
             Console.WriteLine("Core Launched !");

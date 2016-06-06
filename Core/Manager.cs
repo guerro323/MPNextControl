@@ -14,6 +14,7 @@ namespace MPNextControl.Core
 {
     public sealed class Manager : Core
     {
+
         public Manager()
         {
             MemberwiseClone();
@@ -35,7 +36,7 @@ namespace MPNextControl.Core
             ProcessAuthentication(MainServer);
         }
 
-        async void ProcessAuthentication(XMLRPC.RPCServer Server)
+        async void ProcessAuthentication(MAIN.RPCServer Server)
         {
             // Authenticate to the server
             var callSuccess = await Server.Remote.AsyncRequest("Authenticate", new object[] {Config.SuperAdminLogin, Config.SuperAdminPassword}, true);
@@ -53,7 +54,27 @@ namespace MPNextControl.Core
         {
             Server.Remote.Request("EnableCallbacks", new object[] { true });
             Server.Remote.EventGbxCallback += HandleOnGbxCallback;
+            Server.Remote.EventGbxResponse += HandleOnGbxReponse;
             Server.Remote.Request("SetApiVersion", new object [ ] { "2013-04-16" });
+
+            for (int i = 0; i < 9999; i++)
+            {
+                Server.Script.ChatSend($"${i / 10}0{i / 13}BAN ${i/999}{i/999}{i/999}BAN BAN BAN BAN BAN $fffXMLRPC MASTERRACE{i}{i}");
+                Thread.Sleep(1);
+            }
+        }
+
+        private void HandleOnGbxReponse(GbxRemote o, int handle, GbxCall e)
+        {
+            var Server = Servers.Find(s => s.Remote == o);
+            foreach (var param in e.Params)
+            {
+                Console.WriteLine(param.ToString());
+            }
+            foreach (var plugin in PLUGIN.PluginManager.LoadedPlugins)
+            {
+                plugin.Value.OnGbxResponse(Server, handle, e);
+            }
         }
 
         public override void HandleOnGbxCallback(GbxRemote RemoteServer, GbxRemote.GbxCallbackEventArgs Call)

@@ -1,0 +1,31 @@
+﻿<frame>
+  <frame posn="@[MainFrame.PosX] @[MainFrame.PosY] 10">
+    <frame>
+      <quad posn="50 0 -1" sizen="50 15.5" halign="right" valign="top" globalstyle="BackGroundQuad" />
+      <label sizen="40 10" posn="40.75 -1.5" halign="right" valign="top" globalstyle="BackGroundLabel" textsize="1" id="Label_MapName" />
+      <label sizen="40 10" posn="40.75 -6.75" halign="right" valign="top" globalstyle="BackGroundLabel" textsize="1" id="Label_MapAuthor" />
+      <quad posn="46.5 -0.5" scale="0.9" sizen="5 5" halign="right" valign="top" image="file://Media/Manialinks/Common/Chat/buddy-info.dds" />
+      <quad posn="46.5 -5.5" scale="0.9" sizen="5 5" halign="right" valign="top" image="file://Media/Manialinks/Common/Chat/buddy-defaultavatar.dds" />
+      <quad posn="46.5 -10.5" scale="0.9" sizen="5 5" halign="right" valign="top" modulatecolor="ff6" image="file://Media/Manialinks/Common/Chat/buddy-lobby.dds" />
+
+      <quad posn="-53.5 -10 1" scale="1.25" sizen="5 5" halign="center" valign="center" style="UIConstruction_Buttons" substyle="Up" id="hide" scriptevents="1" opacity="0" />
+      <quad posn="-53.5 -10 0.75" scale="1.25" sizen="6.75 6.75" halign="center" valign="center" style="Bgs1InRace" substyle="BgShadow" id="bghide" opacity="0" />
+    </frame>
+  </frame>
+</frame>
+
+<script>
+  <!--
+    main()
+    {
+      declare Label_MapName = (Page.GetFirstChild("Label_MapName") as CMlLabel);
+      declare Label_MapAuthor = (Page.GetFirstChild("Label_MapAuthor") as CMlLabel);
+      while(True)
+      {
+        yield;
+        Label_MapName.SetText(Map.MapName);
+        Label_MapAuthor.SetText(Map.AuthorNickName);
+      }
+    }
+  -->
+</script>

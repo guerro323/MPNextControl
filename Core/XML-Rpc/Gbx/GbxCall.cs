@@ -24,7 +24,7 @@ namespace MPNextControl.Core.XML_Rpc.Gbx
         private readonly bool _mError = false;
         private readonly string _mErrorString;
         private readonly int _mErrorCode;
-        private readonly string _mMethodName;
+        private string _mMethodName;
         private readonly MessageTypes _mType;
 
         /// <summary>
@@ -170,6 +170,10 @@ namespace MPNextControl.Core.XML_Rpc.Gbx
             get
             {
                 return _mMethodName;
+            }
+            set
+            {
+                _mMethodName = value;
             }
         }
 

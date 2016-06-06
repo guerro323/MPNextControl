@@ -14,6 +14,9 @@ class Script : Plugin
 	RPCServer RPCServer;
 	GbxRemote Remote;
 
+	public delegate void HandleOnBeginMap(SMapInfo newMapInfo);
+	public event HandleOnBeginMap OnBeginMap;
+
 	public string StaticName
 	{
 		get { return "Handle"; }

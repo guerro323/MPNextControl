@@ -22,6 +22,7 @@ namespace MPNextControl.Core.XML_Rpc.Gbx
         private AutoResetEvent callRead = new AutoResetEvent(false);
 
         public event GbxCallbackHandler EventGbxCallback;
+        public event GbxResponseHandler EventGbxResponse;
         public event OnDisconnectHandler EventOnDisconnectCallback;
 
         private int requests;
@@ -127,7 +128,7 @@ namespace MPNextControl.Core.XML_Rpc.Gbx
                 // watch out for the next calls ...
                 Buffer = new byte [ 8 ];
                 asyncResult = tcpSocket.BeginReceive(Buffer, 0, Buffer.Length, SocketFlags.None, new AsyncCallback(OnReceiveData), null);
-
+                Console.WriteLine(call.Type);
                 if (call.Type == MessageTypes.Callback)
                 {
 
@@ -138,15 +139,19 @@ namespace MPNextControl.Core.XML_Rpc.Gbx
                 else
                 {
 
-                    // add the response to the queue ...
+
                     responses.Add(call.Handle, call);
 
                     // callback if any method was set ...
                     if (callbackList [ call.Handle ] != null)
                     {
                         ((GbxCallCallbackHandler)callbackList [ call.Handle ]).BeginInvoke(call, null, null);
+                        var origin = (GbxCall)callbackList[call.Handle];
+                        call.MethodName = origin.MethodName;
                         callbackList.Remove(call.Handle);
                     }
+                    Console.WriteLine(call.Handle + " < ");
+                    EventGbxResponse(this, call.Handle, call);
                 }
             }
             catch
@@ -292,7 +297,7 @@ namespace MPNextControl.Core.XML_Rpc.Gbx
 
             // send the call and remember the handle we are waiting on ...
             GbxCall Request = new GbxCall(inMethodName, inParams);
-            Request.Handle = --this.requests;
+            Request.Handle = --requests;
             int handle = SendCall(this.tcpSocket, Request);
 
             // wait until we received the call ...
@@ -306,6 +311,25 @@ namespace MPNextControl.Core.XML_Rpc.Gbx
                     }
                     if (timeOut < Environment.TickCount) tcpSocket.Disconnect(true);
                 }).ContinueWith(t => t);
+            }
+            else
+            {
+                lock (this)
+                {
+                    if (handle != 0)
+                    {
+                        // return handle id ...
+                        var call = new GbxCall(handle, Encoding.ASCII.GetBytes(Request.Xml));
+                        callbackList.Add(handle, call);
+                        return call;
+                    }
+                    else
+                    {
+                        var call = new GbxCall(handle, Encoding.ASCII.GetBytes(Request.Xml));
+                        callbackList.Add(handle, call);
+                        return call;
+                    }
+                }
             }
 
             // did we get disconnected ?
@@ -357,43 +381,6 @@ namespace MPNextControl.Core.XML_Rpc.Gbx
         }
 
         /// <summary>
-        /// Sends a Request and does not wait for a response of the server.
-        /// The response will be written into a buffer or you can set a callback method
-        /// that will be executed.
-        /// </summary>
-        /// <param name="inMethodName">The method to call.</param>
-        /// <param name="inParams">Parameters describing your request.</param>
-        /// <param name="callbackHandler">An optional delegate which is callen when the response is available otherwise set it to null.</param>
-        /// <returns>Returns a handle to your request.</returns>
-        public int AsyncRequest(string inMethodName, object [ ] inParams, GbxCallCallbackHandler callbackHandler)
-        {
-            // send the call and remember the handle ...
-            GbxCall Request = new GbxCall(inMethodName, inParams);
-            Request.Handle = --this.requests;
-            int handle = SendCall(this.tcpSocket, Request);
-
-            lock (this)
-            {
-                if (handle != 0)
-                {
-                    // register a callback on this request ...
-                    if (callbackHandler != null)
-                    {
-
-                        callbackList.Add(handle, callbackHandler);
-                    }
-
-                    // return handle id ...
-                    return handle;
-                }
-                else
-                {
-                    return 0;
-                }
-            }
-        }
-
-        /// <summary>
         /// Gets an asynchron response from the list.
         /// </summary>
         /// <param name="inHandle">The handle which was returned from AsyncRequest.</param>
@@ -403,6 +390,7 @@ namespace MPNextControl.Core.XML_Rpc.Gbx
             return (GbxCall)responses [ inHandle ];
         }
 
+        public delegate void GbxResponseHandler(GbxRemote o, int handle, GbxCall res);
         public delegate void GbxCallbackHandler(GbxRemote o, GbxCallbackEventArgs e);
         public delegate void OnDisconnectHandler(GbxRemote o);
         public delegate void GbxCallCallbackHandler(GbxCall res);

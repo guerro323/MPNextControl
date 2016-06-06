@@ -8,6 +8,7 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 using System.Reflection;
+using Microsoft.CodeAnalysis.Scripting;
 
 namespace MPNextControl.Plugins
 {
@@ -17,6 +18,7 @@ namespace MPNextControl.Plugins
 
         static public Plugin Load(Core.Manager core, string pluginName)
         {
+            if (pluginName == null || pluginName.Length == 0) return new Plugin();
             if (pluginName == "*")
             {
                 FileInfo[] files = new DirectoryInfo("Plugins").GetFiles("*", SearchOption.AllDirectories);
@@ -40,35 +42,47 @@ namespace MPNextControl.Plugins
                 foreach (var plugin in foundPlugins)
                 {
                     Console.WriteLine(plugin);
-                    var assembly = CSScript.MonoEvaluator.CompileCode(ReadText(plugin));
+                    var compiler = CSScript.RoslynEvaluator;
+                    compiler.Reset(false);
+                    compiler.ReferenceDomainAssemblies(DomainAssemblies.AllStaticNonGAC);
+                    //compiler.;
+                    var assembly = compiler.CompileCode(ReadText(plugin));
                     var types = assembly.GetTypes();
                     dynamic pluginScript = Activator.CreateInstance(types.Where(t => t.BaseType == typeof(Plugin)).ToArray()[0]);
                     pluginScript.Init(core, core.PluginConfig);
+                    core.PluginConfig.LoadPluginsConfig(pluginScript.StaticName);
                     var Success = pluginScript.OnLoad();
                     if (Success) LoadedPlugins.Add(pluginScript.StaticName, pluginScript);
+                    Console.WriteLine("keking?");
                 }
                 foreach (var dll in foundDll)
                 {
                     var assembly = Assembly.LoadFile(dll);
                     var types = assembly.GetTypes();
+                    if (!types.Where(t => t.BaseType == typeof(Plugin)).ToArray().Any())
+                        return new Plugin();
                     Plugin pluginScript = (Plugin)Activator.CreateInstance(types.Where(t => t.BaseType == typeof(Plugin)).ToArray()[0]);
                     pluginScript.Init(core, core.PluginConfig);
                     core.PluginConfig.LoadPluginsConfig(pluginScript.StaticName);
                     var Success = pluginScript.OnLoad();
-                    if (Success) LoadedPlugins.Add(pluginScript.StaticName, pluginScript);
+                    //if (Success) LoadedPlugins.Add(pluginScript.StaticName, pluginScript);
                 }
                 return new Plugin();
             }
             else
             {
                 if (pluginName.EndsWith(".cs"))
+                    
                 {
-                    var assembly = CSScript.MonoEvaluator.CompileCode(ReadText(pluginName));
+                    var compiler = CSScript.MonoEvaluator;
+                    compiler.Reset(true);
+                    //compiler.CompilerSettings.Version = Mono.CSharp.LanguageVersion.Future;
+                    var assembly = compiler.CompileCode(ReadText(pluginName));
                     var types = assembly.GetTypes();
                     dynamic pluginScript = Activator.CreateInstance(types.Where(t => t.BaseType == typeof(Plugin)).ToArray()[0]);
                     pluginScript.Init(core);
                     var Success = pluginScript.OnLoad();
-                    if (Success) LoadedPlugins.Add(pluginScript.StaticName, pluginScript);
+                    //if (Success) LoadedPlugins.Add(pluginScript.StaticName, pluginScript);
                     return pluginScript;
                 }
                 else
@@ -78,7 +92,7 @@ namespace MPNextControl.Plugins
                     dynamic pluginScript = Activator.CreateInstance(types.Where(t => t.BaseType == typeof(Plugin)).ToArray()[0]);
                     pluginScript.Init(core);
                     var Success = pluginScript.OnLoad();
-                    if (Success) LoadedPlugins.Add(pluginScript.StaticName, pluginScript);
+                    //if (Success) LoadedPlugins.Add(pluginScript.StaticName, pluginScript);
                     Console.WriteLine(pluginScript.StaticName);
                     return pluginScript;
                 }

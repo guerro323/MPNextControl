@@ -31,7 +31,7 @@ namespace MPNextControl.Services
             byte[] encodedText = Encoding.Unicode.GetBytes(text);
 
             using (FileStream sourceStream = new FileStream(filePath,
-                FileMode.Create, FileAccess.Write, FileShare.None,
+                FileMode.Create, FileAccess.Write, FileShare.Write,
                 bufferSize: 4096, useAsync: true))
             {
                 
